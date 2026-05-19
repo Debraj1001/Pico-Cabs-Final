@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
 import { 
@@ -10,7 +10,6 @@ import {
   Wallet,
   Search,
   Bell,
-  User,
   ArrowRight
 } from 'lucide-react';
 
@@ -152,107 +151,124 @@ const Topbar = ({ onNotificationToggle, onMenuToggle }: { onNotificationToggle: 
 };
 
 const Preloader = ({ onComplete }: { onComplete: () => void }) => {
-  const [step, setStep] = useState(0);
-  const carRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  
-  const steps = [
-    'BOOT SEQUENCE INITIATED',
-    'CONNECTING TO INDIA NODE SOUTH 01...',
-    'ESTABLISHING SECURE CONNECTION...',
-    'SYNCING REAL TIME FLEET DATA...',
-    'INITIALIZING CAB NETWORK...',
-    'SYSTEM READY'
-  ];
+  const [phase, setPhase] = useState<'in' | 'hold' | 'out'>('in');
+  const word1 = 'PICO';
+  const word2 = 'CABS';
+  const allLetters = [...word1.split(''), ' ', ...word2.split('')];
 
   useEffect(() => {
-    const tl = gsap.timeline();
-    
-    // Initial states for docking effect
-    // We start the car way off to the left so it crosses the text
-    gsap.set(carRef.current, { x: -400, opacity: 0 });
-    gsap.set(textRef.current, { opacity: 0, x: -10 });
-
-    tl.to(textRef.current, {
-      opacity: 1,
-      x: 0,
-      duration: 0.8,
-      ease: "power2.out",
-      delay: 0.3
-    })
-    .to(carRef.current, {
-      x: 0, // Docks at its natural flex position on the right
-      opacity: 1,
-      duration: 1.4,
-      ease: "power3.inOut",
-    }, "-=0.6")
-    .to(carRef.current, {
-      scale: 1.03,
-      duration: 0.2,
-      ease: "power1.inOut"
-    })
-    .to(carRef.current, {
-      scale: 1,
-      duration: 0.3,
-      ease: "power2.out"
-    });
-
-    const timer = setInterval(() => {
-      setStep(prev => {
-        if (prev === steps.length - 1) {
-          clearInterval(timer);
-          setTimeout(onComplete, 1200);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 450);
-    return () => clearInterval(timer);
-  }, [onComplete, steps.length]);
+    // After all letters have dropped in (~1.4s) + hold
+    const holdTimer = setTimeout(() => setPhase('hold'), 1600);
+    // Fade out + call complete
+    const outTimer = setTimeout(() => {
+      setPhase('out');
+      setTimeout(onComplete, 600);
+    }, 2600);
+    return () => { clearTimeout(holdTimer); clearTimeout(outTimer); };
+  }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-primary z-[100] flex flex-col items-center justify-center p-10 overflow-hidden">
-      <div className="scanline" />
-      <div className="w-full max-w-md crt-flicker relative">
-        {/* Header Section: justify-between for title and docked icon */}
-        <div className="relative mb-16 py-6 flex items-center justify-between border-b border-white/10 pb-8">
-          {/* Title - Left Aligned */}
-          <span ref={textRef} className="text-white font-bold italic text-4xl tracking-tighter relative z-10">
-            Pico Cabs
-          </span>
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: '#0A0A0F',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        gap: '1.5rem',
+        opacity: phase === 'out' ? 0 : 1,
+        transition: 'opacity 0.6s ease',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Subtle radial glow */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 60% 40% at 50% 50%, rgba(99,102,241,0.08) 0%, transparent 70%)',
+      }} />
 
-          {/* Docking Car Unit - Right Aligned */}
-          <div 
-            ref={carRef} 
-            className="relative z-20 pointer-events-none"
-          >
-            <div className="w-14 h-14 border border-white/20 flex items-center justify-center relative rounded-2xl bg-white/5 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl" />
-              <img src="/Pico Cabs- icon.png" alt="Pico Cabs Icon" className="w-7 h-7 relative z-10 object-contain" />
-              
-              {/* Subtle highlight effect */}
-              <div className="absolute inset-0 bg-white/5 animate-pulse rounded-2xl" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="space-y-4 relative z-10">
-          {steps.map((s, i) => (
-            <div key={i} className={`font-mono text-[10px] tracking-widest transition-all duration-500 ${
-              i <= step ? 'text-white opacity-100 translate-x-0' : 'text-white/0 -translate-x-4'
-            }`}>
-              {i === step ? '> ' : '  '} {s}
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-12 w-full h-1 bg-white/10 relative overflow-hidden rounded-full z-10">
-          <div 
-            className="absolute inset-y-0 left-0 bg-white transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
-            style={{ width: `${(step / (steps.length - 1)) * 100}%` }}
-          />
-        </div>
+      {/* Icon */}
+      <div style={{
+        width: 56, height: 56,
+        background: 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 16,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: '0.5rem',
+        animation: 'preloader-icon-in 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
+      }}>
+        <img src="/Pico Cabs- icon.png" alt="Pico Cabs" style={{ width: 30, height: 30, objectFit: 'contain' }} />
       </div>
+
+      {/* Bouncy letters */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+        {allLetters.map((letter, i) => {
+          const delay = 0.25 + i * 0.07;
+          return (
+            <span
+              key={i}
+              style={{
+                display: 'inline-block',
+                fontSize: letter === ' ' ? '2.5rem' : '3.5rem',
+                fontWeight: 900,
+                letterSpacing: '-0.02em',
+                color: letter === ' ' ? 'transparent' : '#FFFFFF',
+                fontFamily: "'Inter', sans-serif",
+                animation: `preloader-letter-bounce 0.6s cubic-bezier(0.34,1.56,0.64,1) ${delay}s both`,
+                minWidth: letter === ' ' ? '0.5rem' : undefined,
+              }}
+            >
+              {letter === ' ' ? '\u00A0' : letter}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Subtitle */}
+      <p style={{
+        fontSize: '0.6rem',
+        fontFamily: "'JetBrains Mono', monospace",
+        letterSpacing: '0.35em',
+        textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.3)',
+        animation: 'preloader-sub-in 0.5s ease 1.4s both',
+      }}>
+        Your City · Your Ride
+      </p>
+
+      {/* Progress bar */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        height: 2,
+        background: 'rgba(255,255,255,0.05)',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%',
+          background: 'linear-gradient(90deg, #6366f1, #a78bfa)',
+          animation: 'preloader-progress 2.2s ease-out 0.2s both',
+        }} />
+      </div>
+
+      <style>{`
+        @keyframes preloader-letter-bounce {
+          0% { opacity: 0; transform: translateY(-40px) scale(0.6); }
+          60% { opacity: 1; transform: translateY(6px) scale(1.08); }
+          80% { transform: translateY(-3px) scale(0.97); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes preloader-icon-in {
+          0% { opacity: 0; transform: scale(0.5); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes preloader-sub-in {
+          0% { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes preloader-progress {
+          0% { width: 0%; }
+          100% { width: 100%; }
+        }
+      `}</style>
     </div>
   );
 };

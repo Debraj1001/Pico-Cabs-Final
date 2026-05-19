@@ -1,221 +1,473 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, ArrowRight, ShieldCheck, Clock, MapPin, Plane, Briefcase, CalendarHeart, Phone, Mail, Map, Menu, X } from 'lucide-react';
+import {
+  Car, ArrowRight, ShieldCheck, Clock, MapPin, Plane, Briefcase,
+  CalendarHeart, Phone, Mail, Map, Menu, X, Star, Zap, Users, ChevronDown
+} from 'lucide-react';
+
+/* ─── tiny hook: intersection observer for scroll reveal ─── */
+function useReveal(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, visible };
+}
+
+/* ─── scroll reveal wrapper ─── */
+const Reveal = ({
+  children, delay = 0, className = '', style = {}
+}: { children: React.ReactNode; delay?: number; className?: string; style?: React.CSSProperties }) => {
+  const { ref, visible } = useReveal();
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        ...style,
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(32px)',
+        transition: `opacity 0.7s ease ${delay}ms, transform 0.7s ease ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
 
 const LandingPage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const cabTypes = [
+    { label: 'Mini', icon: '🚗', desc: 'Compact & affordable', price: '₹8/km', eta: '3 min' },
+    { label: 'Sedan', icon: '🚘', desc: 'Comfortable & spacious', price: '₹12/km', eta: '5 min' },
+    { label: 'SUV', icon: '🚙', desc: 'Premium family ride', price: '₹18/km', eta: '7 min' },
+    { label: 'Luxury', icon: '🏎️', desc: 'Executive experience', price: '₹28/km', eta: '10 min' },
+  ];
+
+  const services = [
+    { icon: Plane, title: 'Airport Transfers', desc: 'Seamless pick-ups & drop-offs at all major airports. On-time, every time.' },
+    { icon: Briefcase, title: 'Corporate Travel', desc: 'Priority booking, dedicated account management, and invoicing for businesses.' },
+    { icon: Clock, title: 'Hourly Charter', desc: 'Flexible as-directed service with a vehicle and driver at your disposal.' },
+    { icon: CalendarHeart, title: 'Special Events', desc: 'Elegant transportation for weddings, galas, and VIP occasions.' },
+  ];
+
+
+  const reviews = [
+    { name: 'Arjun M.', loc: 'Bengaluru', text: 'Pico Cabs is my daily go-to. Clean cars, polite drivers, zero drama. Way better than the rest.', rating: 5 },
+    { name: 'Priya S.', loc: 'Mumbai', text: 'Used the airport transfer at 4 AM. Driver was on time, car was spotless. Absolutely recommend!', rating: 5 },
+    { name: 'Rahul K.', loc: 'Hyderabad', text: 'The luxury cab for my wedding was perfect. Professional and smooth. Will use again.', rating: 5 },
+  ];
+
   return (
-    <div className="min-h-screen bg-background text-primary selection:bg-primary/10 selection:text-primary font-sans">
-      {/* Navbar */}
-      <header className="fixed top-0 left-0 right-0 h-20 bg-background/80 backdrop-blur-md border-b border-border z-50 px-6 sm:px-10 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary flex items-center justify-center rounded-lg">
-            <img src="/Pico Cabs- icon.png" alt="Pico Cabs Icon" className="w-5 h-5 object-contain" />
+    <div className="lp-root">
+
+      {/* ─── NAV ─── */}
+      <header
+        className={`lp-nav ${scrolled ? 'lp-nav--scrolled' : ''}`}
+      >
+        <div className="lp-nav__inner">
+          {/* Logo */}
+          <div className="lp-logo">
+            <div className="lp-logo__icon">
+              <img src="/Pico Cabs- icon.png" alt="Pico Cabs" className="lp-logo__img" />
+            </div>
+            <span className="lp-logo__name">Pico Cabs</span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-primary italic">Pico Cabs</span>
+
+          {/* Desktop nav */}
+          <nav className="lp-nav__links">
+            <a href="#services">Services</a>
+            <a href="#fleet">Fleet</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+          </nav>
+
+          <div className="lp-nav__actions">
+            <a href="#contact" className="lp-btn lp-btn--ghost">Book a Ride</a>
+            <Link to="/admin" className="lp-btn lp-btn--primary">Admin Portal</Link>
+          </div>
+
+          {/* Hamburger */}
+          <button className="lp-hamburger" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="Toggle menu">
+            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
-        <nav className="hidden sm:flex items-center gap-8 text-sm font-semibold text-secondary">
-          <a href="#services" className="hover:text-primary transition-colors">Services</a>
-          <a href="#fleet" className="hover:text-primary transition-colors">Fleet</a>
-          <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
-        </nav>
-        
-        {/* Mobile Hamburger Button */}
-        <button 
-          className="sm:hidden p-2 text-primary hover:bg-surface/50 rounded-lg transition-colors"
-          onClick={toggleMobileMenu}
-          aria-label="Toggle Menu"
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="lp-mobile-menu">
+            <a href="#services" onClick={() => setIsMobileMenuOpen(false)}>Services</a>
+            <a href="#fleet" onClick={() => setIsMobileMenuOpen(false)}>Fleet</a>
+            <a href="#about" onClick={() => setIsMobileMenuOpen(false)}>About</a>
+            <a href="#contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</a>
+            <a href="#contact" onClick={() => setIsMobileMenuOpen(false)} className="lp-btn lp-btn--primary" style={{ display: 'block', textAlign: 'center', marginTop: '1rem' }}>Book a Ride</a>
+          </div>
+        )}
       </header>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 top-20 bg-background/95 backdrop-blur-md z-40 sm:hidden border-b border-border flex flex-col p-6 animate-in slide-in-from-top-4 duration-300">
-          <nav className="flex flex-col gap-6 text-lg font-bold text-primary mt-4">
-            <a href="#services" onClick={closeMobileMenu} className="hover:text-primary/70 transition-colors border-b border-border/50 pb-4">Services</a>
-            <a href="#fleet" onClick={closeMobileMenu} className="hover:text-primary/70 transition-colors border-b border-border/50 pb-4">Fleet</a>
-            <a href="#contact" onClick={closeMobileMenu} className="hover:text-primary/70 transition-colors border-b border-border/50 pb-4">Contact</a>
-          </nav>
+      {/* ─── HERO ─── */}
+      <section className="lp-hero">
+
+        <div className="lp-grid-bg" />
+
+        <div className="lp-hero__content">
+          <div className="lp-badge">
+            <span className="lp-badge__dot" />
+            Operating in 15+ Cities · 500K+ Rides
+          </div>
+
+          <h1 className="lp-hero__title">
+            Go anywhere with<br />
+            <span>Pico.</span>
+          </h1>
+
+          <p className="lp-hero__sub">
+            Book reliable, safe, and affordable cabs in minutes. Pico Cabs connects you
+            to professional drivers across India — anytime, anywhere.
+          </p>
+
+          <div className="lp-hero__cta">
+            <a href="#fleet" className="lp-btn lp-btn--primary lp-btn--lg">
+              Explore Fleet <ArrowRight size={18} />
+            </a>
+            <a href="#services" className="lp-btn lp-btn--outline lp-btn--lg">
+              Our Services
+            </a>
+          </div>
+
+          {/* Cab type picker */}
+          <div className="lp-cab-picker">
+            {cabTypes.map((c, i) => (
+              <button
+                key={i}
+                className={`lp-cab-tab ${activeTab === i ? 'lp-cab-tab--active' : ''}`}
+                onClick={() => setActiveTab(i)}
+              >
+                <span className="lp-cab-tab__icon">{c.icon}</span>
+                <span>{c.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Selected cab info */}
+          <div className="lp-cab-detail">
+            <div className="lp-cab-detail__info">
+              <span className="lp-cab-detail__label">Type</span>
+              <span className="lp-cab-detail__val">{cabTypes[activeTab].desc}</span>
+            </div>
+            <div className="lp-cab-detail__divider" />
+            <div className="lp-cab-detail__info">
+              <span className="lp-cab-detail__label">Starting from</span>
+              <span className="lp-cab-detail__val lp-cab-detail__val--accent">{cabTypes[activeTab].price}</span>
+            </div>
+            <div className="lp-cab-detail__divider" />
+            <div className="lp-cab-detail__info">
+              <span className="lp-cab-detail__label">Avg ETA</span>
+              <span className="lp-cab-detail__val">{cabTypes[activeTab].eta}</span>
+            </div>
+          </div>
         </div>
-      )}
 
-      <main className="pt-20">
-        {/* Hero Section */}
-        <section className="relative min-h-[80vh] flex flex-col items-center justify-center px-6 text-center overflow-hidden">
-          <div className="absolute inset-0 bg-surface/30" />
-          <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-          
-          <div className="relative z-10 max-w-3xl space-y-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-border text-[10px] font-bold uppercase tracking-widest text-secondary mx-auto shadow-sm">
-              <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-              Operating in 15+ Cities
-            </div>
-            
-            <h1 className="text-5xl sm:text-7xl font-serif italic font-bold tracking-tighter text-primary">
-              Elevating your <br/> everyday journey.
-            </h1>
-            
-            <p className="text-lg text-secondary max-w-xl mx-auto leading-relaxed">
-              Experience the pinnacle of urban mobility. Professional chauffeurs, pristine vehicles, and punctuality you can rely on.
-            </p>
-            
+        {/* Scroll cue */}
+        <a href="#services" className="lp-scroll-cue">
+          <ChevronDown size={20} />
+        </a>
+      </section>
 
-          </div>
-        </section>
 
-        {/* Services Section */}
-        <section id="services" className="py-24 px-6 sm:px-10 bg-white border-t border-border/50">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-sm font-bold tracking-widest text-secondary uppercase mb-3">Our Offerings</h2>
-              <h3 className="text-4xl font-serif italic font-bold text-primary">Premium Services</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { icon: Plane, title: 'Airport Transfers', desc: 'Seamless pick-ups and drop-offs at all major regional and international airports.' },
-                { icon: Briefcase, title: 'Corporate Travel', desc: 'Dedicated account management and priority booking for business professionals.' },
-                { icon: Clock, title: 'Hourly Charter', desc: 'Flexible as-directed service keeping a vehicle and chauffeur at your disposal.' },
-                { icon: CalendarHeart, title: 'Special Events', desc: 'Elegant transportation for weddings, galas, and VIP occasions.' }
-              ].map((service, i) => (
-                <div key={i} className="bento-card bg-surface/20 border-transparent hover:border-border p-8 flex flex-col group transition-all">
-                  <div className="w-12 h-12 bg-white border border-border shadow-sm flex items-center justify-center rounded-xl mb-6 text-primary group-hover:scale-110 transition-transform">
-                    <service.icon size={20} />
-                  </div>
-                  <h4 className="text-lg font-bold mb-2">{service.title}</h4>
-                  <p className="text-sm text-secondary leading-relaxed">{service.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      {/* ─── SERVICES ─── */}
+      <section className="lp-section" id="services">
+        <Reveal className="lp-section__header">
+          <div className="lp-eyebrow">What We Offer</div>
+          <h2 className="lp-section__title">Built for every journey</h2>
+          <p className="lp-section__sub">From daily commutes to airport runs, we've got the right ride for every occasion.</p>
+        </Reveal>
 
-        {/* Fleet Section */}
-        <section id="fleet" className="py-24 px-6 sm:px-10 bg-surface/30 border-t border-border/50">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-sm font-bold tracking-widest text-secondary uppercase mb-3">Our Vehicles</h2>
-              <h3 className="text-4xl font-serif italic font-bold text-primary">The Luxury Fleet</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                { name: 'Executive Sedan', models: 'Mercedes E-Class, BMW 5 Series', capacity: '3 Passengers', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600&auto=format&fit=crop' },
-                { name: 'Premium SUV', models: 'Cadillac Escalade, Range Rover', capacity: '6 Passengers', image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=600&auto=format&fit=crop' },
-                { name: 'First Class', models: 'Mercedes S-Class, BMW 7 Series', capacity: '3 Passengers', image: 'https://images.unsplash.com/photo-1503376760364-5a83a0050d24?q=80&w=600&auto=format&fit=crop' }
-              ].map((vehicle, i) => (
-                <div key={i} className="bento-card overflow-hidden group p-0 bg-white flex flex-col border-transparent hover:border-border">
-                  <div className="h-48 overflow-hidden relative">
-                    <img src={vehicle.image} alt={vehicle.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-xl font-bold">{vehicle.name}</h4>
-                      <div className="flex items-center gap-1 text-xs font-bold text-white bg-primary px-2 py-1 rounded-full">
-                        <Car size={12} /> {vehicle.capacity}
-                      </div>
-                    </div>
-                    <p className="text-sm text-secondary font-medium">{vehicle.models}</p>
-                  </div>
+        <div className="lp-grid lp-grid--4">
+          {services.map((s, i) => (
+            <Reveal key={i} delay={i * 80}>
+              <div className="lp-card lp-card--service">
+                <div className="lp-card__icon-wrap">
+                  <s.icon size={22} />
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Section */}
-        <section id="contact" className="py-24 px-6 sm:px-10 bg-white border-t border-border/50">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-sm font-bold tracking-widest text-secondary uppercase mb-3">Get in Touch</h2>
-              <h3 className="text-4xl font-serif italic font-bold text-primary">Contact Pico Cabs</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
-                <div className="flex gap-4 items-start">
-                  <div className="w-12 h-12 bg-surface/50 border border-border flex items-center justify-center rounded-xl text-primary shrink-0">
-                    <Phone size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold mb-1">Phone</h4>
-                    <p className="text-secondary text-sm">24/7 Dispatch Center</p>
-                    <a href="tel:+1234567890" className="text-primary font-bold mt-1 block hover:underline">+1 (555) 123-4567</a>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4 items-start">
-                  <div className="w-12 h-12 bg-surface/50 border border-border flex items-center justify-center rounded-xl text-primary shrink-0">
-                    <Mail size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold mb-1">Email</h4>
-                    <p className="text-secondary text-sm">Corporate & General Inquiries</p>
-                    <a href="mailto:contact@picocabs.com" className="text-primary font-bold mt-1 block hover:underline">contact@picocabs.com</a>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4 items-start">
-                  <div className="w-12 h-12 bg-surface/50 border border-border flex items-center justify-center rounded-xl text-primary shrink-0">
-                    <Map size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold mb-1">Headquarters</h4>
-                    <p className="text-secondary text-sm leading-relaxed">
-                      100 Executive Blvd, Suite 500<br />
-                      Metropolis, NY 10001
-                    </p>
-                  </div>
-                </div>
+                <h3 className="lp-card__title">{s.title}</h3>
+                <p className="lp-card__desc">{s.desc}</p>
               </div>
-              
-              <div className="bg-surface/20 border border-border p-8 rounded-3xl">
-                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── WHY PICO ─── */}
+      <section className="lp-why">
+        <div className="lp-why__inner">
+          <Reveal className="lp-section__header" style={{ textAlign: 'left' }}>
+            <div className="lp-eyebrow">Why Pico Cabs</div>
+            <h2 className="lp-section__title" style={{ textAlign: 'left' }}>Safety, speed &amp; style</h2>
+          </Reveal>
+          <div className="lp-why__features">
+            {[
+              { icon: ShieldCheck, title: 'Verified Drivers', desc: 'Every driver is background-checked, trained, and rated by riders.' },
+              { icon: Zap, title: 'Instant Booking', desc: 'Confirm your ride in under 30 seconds. No waiting, no friction.' },
+              { icon: MapPin, title: 'Live Tracking', desc: 'Track your cab in real-time, share your trip with loved ones.' },
+              { icon: Star, title: 'Top Rated', desc: '4.9 stars across 500K+ rides. Our riders love us — and we love them back.' },
+              { icon: Users, title: 'Group Rides', desc: 'Travel together with SUVs and Tempo Travellers for groups.' },
+              { icon: Car, title: 'Clean Fleet', desc: 'Well-maintained, sanitized vehicles inspected daily.' },
+            ].map((f, i) => (
+              <Reveal key={i} delay={i * 60}>
+                <div className="lp-why__feat">
+                  <div className="lp-why__feat-icon"><f.icon size={20} /></div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-2">Name</label>
-                    <input type="text" className="w-full bg-white border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-sm" placeholder="John Doe" />
+                    <h4>{f.title}</h4>
+                    <p>{f.desc}</p>
                   </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+        <div className="lp-why__visual">
+          <div className="lp-phone-mockup">
+            <div className="lp-phone-mockup__notch" />
+            <div className="lp-phone-mockup__map">
+              <div className="lp-map-pin lp-map-pin--pickup">📍</div>
+              <div className="lp-map-pin lp-map-pin--dropoff">🏁</div>
+              <div className="lp-map-route" />
+              <div className="lp-map-car">🚗</div>
+            </div>
+            <div className="lp-phone-mockup__card">
+              <div className="lp-ride-card">
+                <div className="lp-ride-card__row">
+                  <span className="lp-ride-card__type">Sedan • ETA 4 min</span>
+                  <span className="lp-ride-card__price">₹120</span>
+                </div>
+                <div className="lp-ride-card__driver">
+                  <div className="lp-ride-card__avatar">R</div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-2">Email</label>
-                    <input type="email" className="w-full bg-white border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-sm" placeholder="john@example.com" />
+                    <div className="lp-ride-card__name">Ravi Kumar</div>
+                    <div className="lp-ride-card__rating">★ 4.9 · KA 01 AB 1234</div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-2">Message</label>
-                    <textarea className="w-full bg-white border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-sm min-h-[120px] resize-none" placeholder="How can we help you?"></textarea>
-                  </div>
-                  <button type="submit" className="w-full btn-primary justify-center mt-2">
-                    Send Message
-                  </button>
-                </form>
+                  <div className="lp-ride-card__confirm">Confirm</div>
+                </div>
               </div>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
 
-      {/* Footer with Admin Link */}
-      <footer className="bg-primary text-white py-12 px-6 sm:px-10 border-t border-primary/20">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/10 flex items-center justify-center rounded-xl">
-              <img src="/Pico Cabs- icon.png" alt="Pico Cabs Icon" className="w-5 h-5 object-contain" />
+      {/* ─── FLEET ─── */}
+      <section className="lp-section" id="fleet">
+        <Reveal className="lp-section__header">
+          <div className="lp-eyebrow">Our Vehicles</div>
+          <h2 className="lp-section__title">A ride for every need</h2>
+          <p className="lp-section__sub">Choose from our diverse fleet of well-maintained, sanitized vehicles.</p>
+        </Reveal>
+
+        <div className="lp-grid lp-grid--3">
+          {[
+            {
+              name: 'Executive Sedan',
+              tag: 'Most Popular',
+              models: 'Toyota Etios, Honda Amaze',
+              capacity: '4 Passengers',
+              image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600&auto=format&fit=crop',
+              price: '₹12/km',
+            },
+            {
+              name: 'Premium SUV',
+              tag: 'Best for Groups',
+              models: 'Innova Crysta, Ertiga',
+              capacity: '6 Passengers',
+              image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=600&auto=format&fit=crop',
+              price: '₹18/km',
+            },
+            {
+              name: 'Luxury Class',
+              tag: 'VIP Experience',
+              models: 'Mercedes E-Class, BMW 5',
+              capacity: '3 Passengers',
+              image: 'https://images.unsplash.com/photo-1503376760364-5a83a0050d24?q=80&w=600&auto=format&fit=crop',
+              price: '₹28/km',
+            },
+          ].map((v, i) => (
+            <Reveal key={i} delay={i * 100}>
+              <div className="lp-fleet-card">
+                <div className="lp-fleet-card__img-wrap">
+                  <img src={v.image} alt={v.name} className="lp-fleet-card__img" />
+                  <div className="lp-fleet-card__overlay" />
+                  <span className="lp-fleet-card__tag">{v.tag}</span>
+                </div>
+                <div className="lp-fleet-card__body">
+                  <div className="lp-fleet-card__top">
+                    <h3 className="lp-fleet-card__name">{v.name}</h3>
+                    <span className="lp-fleet-card__price">{v.price}</span>
+                  </div>
+                  <p className="lp-fleet-card__models">{v.models}</p>
+                  <div className="lp-fleet-card__foot">
+                    <span className="lp-fleet-card__cap"><Car size={13} /> {v.capacity}</span>
+                    <a href="#contact" className="lp-fleet-card__book">Book Now <ArrowRight size={13} /></a>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── REVIEWS ─── */}
+      <section className="lp-reviews">
+        <Reveal className="lp-section__header">
+          <div className="lp-eyebrow">Rider Stories</div>
+          <h2 className="lp-section__title">Loved across India</h2>
+        </Reveal>
+        <div className="lp-grid lp-grid--3">
+          {reviews.map((r, i) => (
+            <Reveal key={i} delay={i * 80}>
+              <div className="lp-review-card">
+                <div className="lp-review-card__stars">{'★'.repeat(r.rating)}</div>
+                <p className="lp-review-card__text">"{r.text}"</p>
+                <div className="lp-review-card__author">
+                  <div className="lp-review-card__avatar">{r.name[0]}</div>
+                  <div>
+                    <div className="lp-review-card__name">{r.name}</div>
+                    <div className="lp-review-card__loc"><MapPin size={11} /> {r.loc}</div>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── APP CTA ─── */}
+      <section className="lp-app-cta">
+
+        <Reveal className="lp-app-cta__inner">
+          <div className="lp-eyebrow" style={{ color: 'rgba(255,255,255,0.5)' }}>Download the App</div>
+          <h2 className="lp-app-cta__title">Pico Cabs in your pocket</h2>
+          <p className="lp-app-cta__sub">Book, track, and manage rides on the go. Available on iOS & Android.</p>
+          <div className="lp-app-cta__btns">
+            <a href="#" className="lp-store-btn">
+              <span className="lp-store-btn__icon">🍎</span>
+              <span><small>Download on the</small><strong>App Store</strong></span>
+            </a>
+            <a href="#" className="lp-store-btn">
+              <span className="lp-store-btn__icon">▶</span>
+              <span><small>Get it on</small><strong>Google Play</strong></span>
+            </a>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ─── CONTACT ─── */}
+      <section className="lp-section" id="contact">
+        <Reveal className="lp-section__header">
+          <div className="lp-eyebrow">Get in Touch</div>
+          <h2 className="lp-section__title">Contact Pico Cabs</h2>
+        </Reveal>
+
+        <div className="lp-contact">
+          <Reveal className="lp-contact__info" delay={0}>
+            <div className="lp-contact__item">
+              <div className="lp-contact__icon"><Phone size={20} /></div>
+              <div>
+                <div className="lp-contact__label">24/7 Dispatch</div>
+                <a href="tel:+1234567890" className="lp-contact__val">+1 (555) 123-4567</a>
+              </div>
             </div>
-            <span className="text-2xl font-bold tracking-tight italic">Pico Cabs</span>
+            <div className="lp-contact__item">
+              <div className="lp-contact__icon"><Mail size={20} /></div>
+              <div>
+                <div className="lp-contact__label">Email Us</div>
+                <a href="mailto:contact@picocabs.com" className="lp-contact__val">contact@picocabs.com</a>
+              </div>
+            </div>
+            <div className="lp-contact__item">
+              <div className="lp-contact__icon"><Map size={20} /></div>
+              <div>
+                <div className="lp-contact__label">Headquarters</div>
+                <div className="lp-contact__val">100 Executive Blvd, Metropolis</div>
+              </div>
+            </div>
+          </Reveal>
+
+          <Reveal className="lp-contact__form-wrap" delay={120}>
+            <form className="lp-form" onSubmit={(e) => e.preventDefault()}>
+              <div className="lp-form__row">
+                <div className="lp-form__field">
+                  <label>Name</label>
+                  <input type="text" placeholder="John Doe" />
+                </div>
+                <div className="lp-form__field">
+                  <label>Email</label>
+                  <input type="email" placeholder="john@example.com" />
+                </div>
+              </div>
+              <div className="lp-form__field">
+                <label>Message</label>
+                <textarea placeholder="How can we help you?" rows={5} />
+              </div>
+              <button type="submit" className="lp-btn lp-btn--primary lp-btn--full">
+                Send Message <ArrowRight size={16} />
+              </button>
+            </form>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ─── FOOTER ─── */}
+      <footer className="lp-footer">
+        <div className="lp-footer__inner">
+          <div className="lp-footer__brand">
+            <div className="lp-logo">
+              <div className="lp-logo__icon">
+                <img src="/Pico Cabs- icon.png" alt="Pico Cabs" className="lp-logo__img" />
+              </div>
+              <span className="lp-logo__name">Pico Cabs</span>
+            </div>
+            <p className="lp-footer__tagline">Reliable rides, everywhere you go.</p>
           </div>
-          
-          <div className="text-xs text-white/50 font-mono tracking-widest uppercase">
-            © 2026 Pico Cabs Operations. All rights reserved.
+
+          <div className="lp-footer__links">
+            <div className="lp-footer__col">
+              <div className="lp-footer__col-title">Services</div>
+              <a href="#services">Airport Transfer</a>
+              <a href="#services">Corporate Travel</a>
+              <a href="#services">Hourly Charter</a>
+              <a href="#services">Special Events</a>
+            </div>
+            <div className="lp-footer__col">
+              <div className="lp-footer__col-title">Company</div>
+              <a href="#about">About Us</a>
+              <a href="#contact">Contact</a>
+              <a href="#">Careers</a>
+              <a href="#">Press</a>
+            </div>
           </div>
-          
-          <Link 
-            to="/admin" 
-            className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-white/60 hover:text-white transition-colors py-2 px-4 rounded-lg hover:bg-white/5"
-          >
-            Admin Portal <ArrowRight size={14} />
+        </div>
+
+        <div className="lp-footer__bottom">
+          <span>© 2026 Pico Cabs. All rights reserved.</span>
+          <Link to="/admin" className="lp-footer__admin">
+            Admin Portal <ArrowRight size={13} />
           </Link>
         </div>
       </footer>
