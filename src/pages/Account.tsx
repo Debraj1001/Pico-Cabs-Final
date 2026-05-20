@@ -3,11 +3,9 @@ import {
   User, 
   Shield, 
   Key, 
-  Mail, 
   Globe,
   Camera,
   LogOut,
-  Bell,
   ArrowLeft
 } from 'lucide-react';
 import gsap from 'gsap';

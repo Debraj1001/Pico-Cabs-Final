@@ -73,10 +73,6 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  const handleDiagnostics = () => {
-    alert('System Integrity Check Initiated...\nRelay Nodes: NOMINAL\nLatency: 24ms\nSecurity: SECURE\nNo anomalies detected in India Node 01.');
-  };
-
   const handleViewHistory = () => {
     alert('Accessing historical payout ledgers...');
   };

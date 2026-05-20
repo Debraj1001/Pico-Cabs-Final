@@ -9,8 +9,7 @@ import {
   Calendar,
   Zap,
   ArrowLeft,
-  Truck,
-  BatteryCharging
+  Truck
 } from 'lucide-react';
 
 const vehicles = [
@@ -205,7 +204,7 @@ const Vehicles: React.FC = () => {
                         </div>
                         <div className="w-full bg-surface border border-border h-2 rounded-full overflow-hidden">
                           <div 
-                            className={`h-full transition-all duration-1000 ${parseInt(v.battery || v.fuel) < 25 ? 'bg-red-500' : 'bg-primary'}`} 
+                            className={`h-full transition-all duration-1000 ${parseInt(v.battery ?? v.fuel ?? '0') < 25 ? 'bg-red-500' : 'bg-primary'}`} 
                             style={{ width: v.battery || v.fuel }} 
                           />
                         </div>

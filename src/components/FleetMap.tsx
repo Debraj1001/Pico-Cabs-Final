@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { Shield, AlertCircle, TrendingUp, Navigation, X, Activity } from 'lucide-react';
+import { Shield, Navigation, X, Activity } from 'lucide-react';
 
 interface MapNode {
   id: string;

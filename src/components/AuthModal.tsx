@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Car, ShieldCheck, Mail, Lock, ArrowRight } from 'lucide-react';
+import { X, ShieldCheck, Mail, Lock, ArrowRight } from 'lucide-react';
 import gsap from 'gsap';
 
 interface AuthModalProps {
